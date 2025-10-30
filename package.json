@@ -1,0 +1,16 @@
+{
+  "name": "chatbot_project",
+  "version": "1.0.0",
+  "description": "Simple WhatsApp-style chat (Express + Socket.IO + MySQL)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mysql2": "^3.15.3",
+    "socket.io": "^4.8.1"
+  }
+}
