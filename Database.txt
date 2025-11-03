@@ -1,0 +1,145 @@
+-- -------------------------------------------------------------
+-- 1️⃣ CREATE DATABASE
+-- -------------------------------------------------------------
+CREATE DATABASE chatdb;
+
+-- -------------------------------------------------------------
+-- 2️⃣ SELECT THE DATABASE
+-- -------------------------------------------------------------
+USE chatdb;
+
+-- -------------------------------------------------------------
+-- 3️⃣ CREATE TABLE: USERS
+-- Stores user information (IDs and Names)
+-- -------------------------------------------------------------
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+-- -------------------------------------------------------------
+-- 4️⃣ CREATE TABLE: CONVERSATIONS
+-- Keeps track of which two users are chatting
+-- -------------------------------------------------------------
+CREATE TABLE conversations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user1 INT NOT NULL,
+    user2 INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user1) REFERENCES users(id),
+    FOREIGN KEY (user2) REFERENCES users(id)
+);
+
+-- -------------------------------------------------------------
+-- 5️⃣ CREATE TABLE: MESSAGES
+-- Stores all chat messages exchanged in conversations
+-- -------------------------------------------------------------
+CREATE TABLE messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    conversation_id INT NOT NULL,
+    sender_id INT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+    FOREIGN KEY (sender_id) REFERENCES users(id)
+);
+
+-- -------------------------------------------------------------
+-- 6️⃣ INSERT SAMPLE USERS
+-- These users appear in the contact list.
+-- -------------------------------------------------------------
+INSERT INTO users (name) VALUES ('Alice');
+INSERT INTO users (name) VALUES ('Bob');
+INSERT INTO users (name) VALUES ('Charlie');
+INSERT INTO users (name) VALUES ('David');
+INSERT INTO users (name) VALUES ('Emma');
+
+-- -------------------------------------------------------------
+-- 7️⃣ CONTACT FETCH QUERY
+-- This is used by the backend route:
+-- GET /contacts/:userId
+-- It shows all users except the one logged in.
+-- -------------------------------------------------------------
+SELECT id, name 
+FROM users 
+WHERE id != <your_user_id>;
+
+-- Example: if user 1 (Alice) logs in
+SELECT id, name FROM users WHERE id != 1;
+
+-- -------------------------------------------------------------
+-- 8️⃣ CONVERSATION FETCH OR CREATE QUERY
+-- Used in backend route:
+-- GET /conversation/:userA/:userB
+-- Checks if a chat exists between two users, else creates one.
+-- -------------------------------------------------------------
+-- Check if conversation exists:
+SELECT id FROM conversations 
+WHERE (user1 = <userA> AND user2 = <userB>) 
+   OR (user1 = <userB> AND user2 = <userA>);
+
+-- If no result, create new conversation:
+INSERT INTO conversations (user1, user2) 
+VALUES (<userA>, <userB>);
+
+-- -------------------------------------------------------------
+-- 9️⃣ FETCH ALL MESSAGES FOR A CONVERSATION
+-- Used by route:
+-- GET /messages/:conversationId
+-- -------------------------------------------------------------
+SELECT 
+    m.id, 
+    m.sender_id, 
+    m.text, 
+    m.created_at, 
+    u.name AS sender_name
+FROM messages m
+JOIN users u ON m.sender_id = u.id
+WHERE m.conversation_id = <conversationId>
+ORDER BY m.created_at ASC;
+
+-- -------------------------------------------------------------
+-- 🔟 INSERT A NEW MESSAGE
+-- Used by route:
+-- POST /message
+-- -------------------------------------------------------------
+INSERT INTO messages (conversation_id, sender_id, text)
+VALUES (<conversation_id>, <sender_id>, '<message_text>');
+
+-- Example:
+INSERT INTO messages (conversation_id, sender_id, text)
+VALUES (1, 2, 'Hey there!');
+
+-- -------------------------------------------------------------
+-- 1️⃣1️⃣ FETCH LAST INSERTED MESSAGE WITH USER INFO
+-- Used after inserting a message to broadcast it instantly.
+-- -------------------------------------------------------------
+SELECT 
+    m.id, 
+    m.conversation_id, 
+    m.sender_id, 
+    m.text, 
+    m.created_at, 
+    u.name AS sender_name
+FROM messages m
+JOIN users u ON m.sender_id = u.id
+WHERE m.id = <last_insert_id>;
+
+-- Example:
+SELECT 
+    m.id, m.conversation_id, m.sender_id, m.text, m.created_at, u.name AS sender_name
+FROM messages m
+JOIN users u ON m.sender_id = u.id
+WHERE m.id = LAST_INSERT_ID();
+
+-- -------------------------------------------------------------
+-- 1️⃣2️⃣ CHECK TABLES OR DATA (OPTIONAL DEBUG COMMANDS)
+-- -------------------------------------------------------------
+SHOW TABLES;
+DESCRIBE users;
+DESCRIBE conversations;
+DESCRIBE messages;
+
+SELECT * FROM users;
+SELECT * FROM conversations;
+SELECT * FROM messages;
